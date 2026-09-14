@@ -1,0 +1,234 @@
+WEATHER DASHBOARD - DEV NOTES
+=============================
+
+Project:   Weather Dashboard
+Version:   v0.1
+Started:   2026-08-22
+Location:  opencode_mac/001_2026_08_22_Weather_dashboard
+
+--------------------------------------------------
+CHANGELOG
+--------------------------------------------------
+
+v0.1 (2026-08-22)
+- Project initialized. Directory structure created.
+- Environment prepared: Go 1.27.0 + Rust 1.98.0 in tools/ (portable),
+  Xcode CLT installed (clang 21, git 2.50.1).
+- STACK DECISION: Swift 6.3 + SwiftUI + Swift Charts via CLT.
+  Zero external dependencies - links only macOS system frameworks.
+  Chosen for maximum native look/feel on macOS.
+- DATA: Open-Meteo API (free, no key) - the free GitHub weather project.
+  Current + hourly + daily (10 days) in one request; timezone=auto.
+- UI v0.1: condition-tinted gradient background, hero card (big temp,
+  feels-like, humidity/wind/gusts/UV/pressure/rain pills), horizontal
+  10-day forecast strip (Weatherzone style, today highlighted), tabbed
+  48h charts (Temperature area / Rainfall bars / Wind), sunrise+sunset
+  footer, location menu with 10 presets (default Adelaide, persisted),
+  manual refresh + 30-min auto-refresh.
+- PACKAGING: dist/WeatherDashboard.app (592 KB) - standalone bundle,
+  ad-hoc signed. build.sh rebuilds it. Runs on macOS 13+ Intel.
+- VERIFIED: compiled clean, launched, live Adelaide data fetched,
+  quit cleanly.
+
+HOTFIX 1 (2026-08-22, still v0.1):
+- BUG: app showed error state - no data. CLI curl worked, GUI didn't.
+- DIAGNOSIS (via offline decode harness in temp/):
+  1) Original failure: JSON keys are snake_case (temperature_2m) but
+     Codable properties camelCase with no mapping -> keyNotFound.
+  2) Attempted fix keyDecodingStrategy=.convertFromSnakeCase FAILED:
+     on this macOS 26 Foundation that strategy is a NO-OP for plain
+     property names AND MANGLES explicit CodingKeys raw values.
+     (Regression vs older Foundation - verified with isolated tests.)
+- FIX: removed the strategy entirely; added explicit CodingKeys enums
+  to all API structs mapping snake_case JSON -> camelCase properties.
+- LESSON: never rely on keyDecodingStrategy on this machine; always
+  write explicit CodingKeys for external APIs.
+- Re-verified: harness OK (10 days / 48 hours / 15.1C), app rebuilt
+  (588 KB), relaunched successfully.
+
+TODO NEXT (towards v0.3) - DONE in v0.4:
+- [x] Units toggle C/F + wind km/h <-> mph
+- [x] Hourly precipitation chart: add probability line on its own axis
+- [x] Menu-bar mini view (optional)
+- [x] AudioCommander (002) build-out
+
+--------------------------------------------------
+CHANGELOG v0.2 (2026-08-22)
+--------------------------------------------------
+- APP ICON: generated via CoreGraphics tool tools/gen_icon.swift
+  (sky gradient + sun + cloud), iconset -> AppIcon.icns (658 KB),
+  wired into Info.plist CFBundleIconFile. No design assets needed.
+- CITY SEARCH: magnifier button in header opens search sheet;
+  Open-Meteo geocoding API (debounced 300ms via .task(id:)).
+  Results show region/country; picking a city adds it to the
+  location menu and switches immediately. Custom cities persist
+  in UserDefaults (JSON [Place]) - Place made Codable.
+- AIR QUALITY + POLLEN: second Open-Meteo endpoint merged
+  concurrently (async let). Pills appear when data exists:
+  US AQI with label, max pollen grains with label.
+  GOTCHA: API no longer accepts generic tree_pollen/weed_pollen
+  in current (HTTP error) - use named species instead
+  (grass, alder, birch, mugwort, olive, ragweed); tree = max of
+  tree species. Air fetch is non-fatal: pills hide on failure.
+- Version bumped: plist 0.2 (build 2). Bundle now 1.4 MB.
+- VERIFIED: endpoints probed by curl, app rebuilt, relaunched,
+  process stable.
+
+PATCH (2026-08-22, v0.2 build 3) - user feedback round 1:
+- FIX: window did not scale/fullscreen - frame was hard-pinned to
+  1000x720. Now minWidth 860 x minHeight 620 with defaultSize
+  1000x720; layout flexes (charts/stretch, days strip scrolls).
+- FEATURE: location management. New list button in header opens
+  "Saved locations" sheet: shows built-ins (locked) + custom cities
+  with trash button; deleting the current city falls back to
+  Adelaide. Store gained remove()/isPreset()/saveCustoms().
+- User confirmed loving the visual design - keep look unchanged.
+
+PATCH (2026-08-22, v0.2 build 4) - user request:
+- Added live 24h date/time clock pill in header (between "Updated"
+  label and location menu): "Sat 22 Aug · 14:32" format, en_AU,
+  monospaced digits, TimelineView(.everyMinute), glassy pill style
+  matching MetricPill aesthetic.
+
+--------------------------------------------------
+CHANGELOG v0.1 (2026-08-22)
+--------------------------------------------------
+- Project initialized. Directory structure created.
+- Environment prepared: Go 1.27.0 + Rust 1.98.0 in tools/ (portable),
+  Xcode CLT installed (clang 21, git 2.50.1).
+- STACK DECISION: Swift 6.3 + SwiftUI + Swift Charts via CLT.
+  Zero external dependencies - links only macOS system frameworks.
+  Chosen for maximum native look/feel on macOS.
+- DATA: Open-Meteo API (free, no key) - the free GitHub weather project.
+  Current + hourly + daily (10 days) in one request; timezone=auto.
+- UI v0.1: condition-tinted gradient background, hero card (big temp,
+  feels-like, humidity/wind/gusts/UV/pressure/rain pills), horizontal
+  10-day forecast strip (Weatherzone style, today highlighted), tabbed
+  48h charts (Temperature area / Rainfall bars / Wind), sunrise+sunset
+  footer, location menu with 10 presets (default Adelaide, persisted),
+  manual refresh + 30-min auto-refresh.
+- PACKAGING: dist/WeatherDashboard.app - standalone bundle,
+  ad-hoc signed. build.sh rebuilds it. Runs on macOS 13+ Intel.
+- VERIFIED: compiled clean, launched, live Adelaide data fetched,
+  quit cleanly.
+
+HOTFIX 1 (2026-08-22, still v0.1):
+- BUG: app showed error state - no data. CLI curl worked, GUI didn't.
+- DIAGNOSIS (via offline decode harness in temp/):
+  1) Original failure: JSON keys are snake_case (temperature_2m) but
+     Codable properties camelCase with no mapping -> keyNotFound.
+  2) Attempted fix keyDecodingStrategy=.convertFromSnakeCase FAILED:
+     on this macOS 26 Foundation that strategy is a NO-OP for plain
+     property names AND MANGLES explicit CodingKeys raw values.
+     (Regression vs older Foundation - verified with isolated tests.)
+- FIX: removed the strategy entirely; added explicit CodingKeys enums
+  to all API structs mapping snake_case JSON -> camelCase properties.
+- LESSON: never rely on keyDecodingStrategy on this machine; always
+  write explicit CodingKeys for external APIs.
+
+UNIVERSAL BUILD (2026-08-22, still v0.1 packaging change):
+- User request: apps must run on Intel AND Apple Silicon (M-series).
+- build.sh now compiles two slices with explicit targets
+  (x86_64-apple-macos13.0 + arm64-apple-macos13.0) and merges them
+  into a fat binary via lipo -create.
+- Verified: "Architectures in the fat file ... are: x86_64 arm64".
+  App size 592 KB -> 2.4 MB (both slices). Relaunched OK on Intel;
+  arm64 slice will run natively on M1/M2/M3 Macs.
+
+REFERENCE PORTS QUEUED:
+- 002 AudioCommander and 003 Gadgets planned (see their dev_notes.txt).
+
+QUIT-ON-CLOSE FIX (2026-08-22, still v0.1 packaging change, build 5):
+- User report: clicking red traffic-light button left app running in
+  background (default SwiftUI WindowGroup behaviour on macOS).
+- FIX: NSApplicationDelegateAdaptor + applicationShouldTerminate-
+  AfterLastWindowClosed -> true in WeatherDashboardApp.swift.
+  App now terminates when its last window closes.
+- NOTE: could not auto-verify (System Events clicks need Assistive
+  Access for the terminal); canonical API, user to confirm by click.
+
+v0.3 (2026-08-22, build 6)
+- Milestone: settings + localization + contrast (parity with 002
+  AudioCommander conventions).
+- SETTINGS SHEET (gear button in header): version+build display,
+  font size slider 85-130% applied across header/cards/pills/strip,
+  language picker. Persisted via UserDefaults (wd_language,
+  wd_font_scale).
+- LOCALIZATION EN(default)/PL/IT/zh-CN: new src/AppSettings.swift
+  with full string tables incl. all WMO condition descriptions,
+  AQI/UV/pollen level labels, day names + clock now locale-aware
+  (en_AU/pl_PL/it_IT/zh_CN). Models.swift WMO/AirQuality lookups
+  route through AppSettings.
+- CONTRAST pass (user request):
+  * HeroCard & ChartsCard: dark backing layer (black 28%) under the
+    material, brighter border stroke 0.10->0.18, drop shadow.
+  * MetricPills: fill 0.09->0.15 + hairline border, value text now
+    explicit white; label text 72% white.
+  * DayCards: darker backing on non-today cards, brighter strokes,
+    high temp text shadow, lows/wind bumped to 72-78% white.
+  * Hero icon + big temperature get soft shadows; temp weight
+    thin->light for legibility on bright sky gradients.
+- LESSON: AppSettings here is NOT @MainActor because WMO static
+  helpers are called from nonisolated contexts (unlike 002).
+- VERIFIED: universal build OK (2.7 MB), launched, process stable.
+
+--------------------------------------------------
+TODO (original)
+--------------------------------------------------
+
+- [ ] Define feature set (current conditions, forecast, location search, etc.)
+- [ ] Choose tech stack and weather API provider
+- [ ] Design basic UI layout
+
+--------------------------------------------------
+NOTES
+--------------------------------------------------
+
+(working notes go here)
+
+MENU CLEANUP (2026-08-22, v0.3 build 7):
+- Removed macOS "Services" submenu (system cross-app handoff feature,
+  unused) via .commands { CommandGroup(replacing: .systemServices) {} }.
+  NOTE: placement is .systemServices in this SDK, NOT .appServices.
+- Added Settings... app-menu item with Cmd+, shortcut (opens same
+  sheet as header gear via AppSettings.settingsRequest counter).
+- STANDING CONVENTION (user directive): every future app ships with
+  settings menu + EN/PL/IT/zh-CN localization + deliberate contrast
+  from v0.1 onwards.
+
+v0.4 (2026-08-25, build 8)
+- Milestone: outstanding-goals sweep (units toggle, dual-axis rain
+  chart, menu-bar mini view).
+- UNITS TOGGLE: TempUnit (°C/°F) + WindSpeedUnit (km/h/mph) enums in
+  AppSettings, persisted (wd_temp_unit / wd_wind_unit). Data stays
+  metric internally; converted at display time -> instant switching,
+  no refetch. Applied to hero temp+suffix, feels-like, wind/gusts
+  pills, day cards high/low/wind, temperature & wind charts (values +
+  axis now in chosen unit). Unit hint badge added next to "Next 48h"
+  title (°C | mm · % | km/h) since this SDK has no AxisTitle API.
+- RAINFALL CHART DUAL AXIS: Swift Charts has no native dual scale ->
+  probability line mapped onto the mm domain (percent * maxRain/100),
+  trailing AxisMarks shows un-scaled % ticks at 0/25/50/75/100 with
+  faint grid; leading axis keeps mm. Dashed line unchanged visually,
+  now reads correctly against its own right-hand scale.
+- MENU-BAR MINI VIEW: MenuBarExtra(.window) panel - location,
+  condition desc, icon + big temp, feels-like/wind/humidity rows,
+  updated time, refresh button, "Open dashboard" (openWindow(id:)).
+  Dynamic status-item label = condition symbol + current temp.
+  WeatherStore moved to App-level @StateObject injected into both
+  scenes (ContentView now @EnvironmentObject); auto-refresh timer
+  moved INTO the store (30-min Task loop, load() guarded by
+  isLoading) so both surfaces stay fresh; WindowGroup got explicit
+  id "dashboard".
+- KEEP-ALIVE OPTION: settings toggle "Stay in menu bar after closing
+  window" (wd_menubar_keepalive, default OFF = legacy quit-on-close).
+  applicationShouldTerminateAfterLastWindowClosed reads UserDefaults
+  dynamically so toggling takes effect immediately.
+- Settings sheet gained Units section (segmented °C/°F + km/h/mph)
+  and the keep-alive toggle; new localized keys unitsHeader /
+  stayInMenuBar / openDashboard in all four languages.
+- GOTCHA: AxisTitle unavailable in this SDK's Charts -> replaced by
+  header unit badges. Slow compile (~2min/slice) from chart type
+  inference - expected, not a regression.
+- VERIFIED: universal build OK (3.1 MB), launched, process stable
+  >20s, no crash reports, clean SIGTERM exit.
