@@ -232,3 +232,7 @@ v0.4 (2026-08-25, build 8)
   inference - expected, not a regression.
 - VERIFIED: universal build OK (3.1 MB), launched, process stable
   >20s, no crash reports, clean SIGTERM exit.
+
+=== 2026-09-14 — uploaded to GitHub (private) ===
+Repo: https://github.com/Kafaferanterenous/weather-dashboard (main). One initial commit;
+build artifacts (build/, dist/, *.app, **/target as applicable) gitignored.
